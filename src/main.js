@@ -1,60 +1,49 @@
 import './style.css'
-import heroImg from './assets/hero.png'
-import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
-import { setupCounter } from './counter.js'
 
 document.querySelector('#app').innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.js</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+  <main class="start-page">
+    <section class="hero">
+      <p class="eyebrow">CASE FILE · 001</p>
+      <h1>Detective<br /><span>Case</span></h1>
+      <p class="intro">
+        흩어진 진술과 증거 속에서<br />
+        사건의 진실을 밝혀내세요.
+      </p>
 
-<div class="ticks"></div>
+      <div class="actions">
+        <button class="primary-button" type="button" data-action="start">
+          새 사건 시작하기
+        </button>
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-          <img class="button-icon" src="${javascriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+        <button class="secondary-button" type="button" data-action="continue">
+          이어서 하기
+        </button>
+      </div>
 
-<div class="ticks"></div>
-<section id="spacer"></section>
+      <p id="notice" class="notice" aria-live="polite">
+        탐정님, 첫 사건이 당신을 기다리고 있습니다.
+      </p>
+    </section>
+
+    <aside class="case-card">
+      <p class="card-label">NEXT CASE</p>
+      <div class="card-line"></div>
+      <p class="case-number">CASE 01</p>
+      <h2>식탁 위의 거짓말</h2>
+      <p class="case-description">
+        산속 별장에서 발견된 요리 연구가의 시신.<br />
+        식탁 위에 남겨진 음식이 사건의 시간을 말하고 있다.
+      </p>
+    </aside>
+  </main>
 `
 
-setupCounter(document.querySelector('#counter'))
+const notice = document.querySelector('#notice')
+
+document.querySelector('[data-action="start"]').addEventListener('click', () => {
+  notice.textContent = '다음 단계에서 CASE 01 선택 화면으로 연결합니다.'
+})
+
+document.querySelector('[data-action="continue"]').addEventListener('click', () => {
+  notice.textContent = '저장된 게임 세션을 확인하는 기능을 다음 단계에서 연결합니다.'
+})
