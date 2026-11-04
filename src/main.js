@@ -9,6 +9,9 @@ import {
   getSuspectDetail,
   askQuestion,
   getEvidences,
+  useHint,
+  getHintHistory,
+  submitSolution,
 } from "./api.js";
 
 const app = document.querySelector("#app");
@@ -141,6 +144,21 @@ async function renderPage(pageState) {
 
       const suspect = await getSuspectDetail(sessionId, pageState.suspectId);
       renderQuestionPage(suspect);
+      return;
+    }
+
+    case "solution": {
+      if (!sessionId) {
+        resetToStartPage();
+        return;
+      }
+
+      const [suspects, evidences] = await Promise.all([
+        getSuspects(sessionId),
+        getEvidences(sessionId),
+      ]);
+
+      renderSolutionPage(suspects, evidences);
       return;
     }
 
@@ -405,11 +423,48 @@ function renderScenePage(scene) {
 
       <p id="scene-notice" class="notice" aria-live="polite"></p>
     </main>
+
+    <div id="hint-modal" class="hint-modal" hidden>
+      <section class="hint-modal-content" role="dialog" aria-modal="true">
+        <button
+          id="hint-close-button"
+          class="hint-close-button"
+          type="button"
+          aria-label="힌트 닫기"
+        >
+          ×
+        </button>
+
+        <p class="eyebrow">DETECTIVE'S HINT</p>
+        <h2>힌트 기록</h2>
+
+        <div id="hint-history-list" class="hint-history-list"></div>
+
+        <p id="hint-score" class="hint-score"></p>
+        <p id="hint-notice" class="notice" aria-live="polite"></p>
+
+        <button
+          id="use-next-hint-button"
+          class="primary-button hint-use-button"
+          type="button"
+        >
+          다음 힌트 사용 · 5점 차감
+        </button>
+      </section>
+    </div>
   `;
 
   const sceneTitle = document.querySelector("#scene-title");
   const sceneImage = document.querySelector("#scene-image");
   const scenePlaceholder = document.querySelector("#scene-placeholder");
+  const sceneNotice = document.querySelector("#scene-notice");
+  const hintModal = document.querySelector("#hint-modal");
+  const hintButton = document.querySelector('[data-menu="hint"]');
+  const hintHistoryList = document.querySelector("#hint-history-list");
+  const hintScore = document.querySelector("#hint-score");
+  const hintNotice = document.querySelector("#hint-notice");
+  const useNextHintButton = document.querySelector("#use-next-hint-button");
+  const sessionId = localStorage.getItem("sessionId");
 
   sceneTitle.textContent = scene.caseTitle;
 
@@ -422,10 +477,61 @@ function renderScenePage(scene) {
     scenePlaceholder.hidden = false;
   }
 
-  document.querySelectorAll(".scene-menu-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      const notice = document.querySelector("#scene-notice");
+  async function loadHintHistory() {
+    const hintHistory = await getHintHistory(sessionId);
 
+    if (hintHistory.hints.length === 0) {
+      hintHistoryList.innerHTML = `
+        <p class="hint-empty">아직 사용한 힌트가 없습니다.</p>
+      `;
+    } else {
+      hintHistoryList.innerHTML = hintHistory.hints
+        .map(
+          (hint) => `
+            <article class="hint-history-card">
+              <p>HINT ${hint.hintOrder}</p>
+              <span>${hint.content}</span>
+            </article>
+          `,
+        )
+        .join("");
+    }
+
+    hintScore.textContent =
+      `현재 점수 ${hintHistory.score}점 · ` +
+      `힌트 ${hintHistory.hintCount}회 사용 · ` +
+      `${hintHistory.remainingHintCount}회 남음`;
+
+    if (hintHistory.remainingHintCount === 0) {
+      useNextHintButton.hidden = true;
+      hintButton.textContent = "힌트 기록";
+    } else {
+      useNextHintButton.hidden = false;
+      useNextHintButton.disabled = false;
+      hintButton.textContent = `힌트 (${hintHistory.remainingHintCount}회 남음)`;
+    }
+  }
+
+  document.querySelector("#hint-close-button").addEventListener("click", () => {
+    hintModal.hidden = true;
+  });
+
+  useNextHintButton.addEventListener("click", async () => {
+    useNextHintButton.disabled = true;
+    hintNotice.textContent = "다음 힌트를 확인하고 있습니다...";
+
+    try {
+      await useHint(sessionId);
+      hintNotice.textContent = "";
+      await loadHintHistory();
+    } catch (error) {
+      hintNotice.textContent = error.message;
+      useNextHintButton.disabled = false;
+    }
+  });
+
+  document.querySelectorAll(".scene-menu-button").forEach((button) => {
+    button.addEventListener("click", async () => {
       if (button.dataset.menu === "suspect") {
         moveToPage("suspects");
         return;
@@ -436,7 +542,20 @@ function renderScenePage(scene) {
         return;
       }
 
-      notice.textContent = `${button.textContent.trim()} 기능은 다음 단계에서 연결합니다.`;
+      if (button.dataset.menu === "hint") {
+        try {
+          await loadHintHistory();
+          hintModal.hidden = false;
+        } catch (error) {
+          sceneNotice.textContent = error.message;
+        }
+
+        return;
+      }
+
+      if (button.dataset.menu === "solution") {
+        moveToPage("solution");
+      }
     });
   });
 }
@@ -658,6 +777,196 @@ function renderQuestionPage(suspect, answer = null) {
       }
     });
   });
+}
+
+function renderSolutionPage(suspects, evidences) {
+  const suspectOptions = suspects
+    .map(
+      (suspect) => `
+        <option value="${suspect.suspectId}">
+          ${suspect.name} · ${suspect.roleName}
+        </option>
+      `,
+    )
+    .join("");
+
+  const evidenceOptions = evidences
+    .map(
+      (evidence) => `
+        <option value="${evidence.evidenceId}">
+          ${evidence.name}
+        </option>
+      `,
+    )
+    .join("");
+
+  app.innerHTML = `
+    <main class="solution-page">
+      <button type="button" class="back-button">
+        ← 사건 현장으로
+      </button>
+
+      <section class="solution-content">
+        <p class="eyebrow">FINAL DEDUCTION</p>
+        <h1>최종 답안 제출</h1>
+        <p class="intro">
+          범인과 결정적 증거를 선택하고, 사건의 진실을 설명하세요.
+        </p>
+
+        <form id="solution-form" class="solution-form">
+          <label class="solution-field">
+            <span>범인으로 의심되는 인물</span>
+
+            <select id="solution-suspect" required>
+              <option value="">용의자를 선택하세요</option>
+              ${suspectOptions}
+            </select>
+          </label>
+
+          <label class="solution-field">
+            <span>결정적 증거</span>
+
+            <select id="solution-evidence" required>
+              <option value="">증거를 선택하세요</option>
+              ${evidenceOptions}
+            </select>
+          </label>
+
+          <label class="solution-field solution-truth-field">
+            <span>사건의 진실</span>
+
+            <textarea
+              id="solution-truth"
+              rows="7"
+              placeholder="범행의 흐름과 그렇게 판단한 이유를 적어주세요."
+              required
+            ></textarea>
+          </label>
+
+          <button
+            id="solution-submit-button"
+            class="primary-button solution-submit-button"
+            type="submit"
+          >
+            답안 제출하기
+          </button>
+
+          <p id="solution-notice" class="notice" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+  `;
+
+  document.querySelector(".back-button").addEventListener("click", () => {
+    moveToPage("scene");
+  });
+
+  document
+    .querySelector("#solution-form")
+    .addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const suspectId = Number(
+        document.querySelector("#solution-suspect").value,
+      );
+
+      const evidenceId = Number(
+        document.querySelector("#solution-evidence").value,
+      );
+
+      const truth = document.querySelector("#solution-truth").value.trim();
+      const submitButton = document.querySelector("#solution-submit-button");
+      const notice = document.querySelector("#solution-notice");
+
+      if (!suspectId || !evidenceId || !truth) {
+        notice.textContent = "모든 답안 항목을 입력해 주세요.";
+        return;
+      }
+
+      submitButton.disabled = true;
+      notice.textContent = "답안을 판정하고 있습니다...";
+
+      try {
+        const sessionId = localStorage.getItem("sessionId");
+
+        const result = await submitSolution(sessionId, {
+          suspectId,
+          evidenceId,
+          truth,
+        });
+
+        renderSolutionResultPage(result);
+      } catch (error) {
+        notice.textContent = error.message;
+        submitButton.disabled = false;
+      }
+    });
+}
+
+function renderSolutionResultPage(result) {
+  const resultTitle = result.isCorrect ? "사건 해결" : "사건 해결 실패";
+
+  const resultMessage = result.isCorrect
+    ? "추리가 사건의 진실에 도달했습니다."
+    : "아직 사건의 핵심을 밝혀내지 못했습니다. 다시 단서를 확인해 보세요.";
+
+  const truthParagraphs = result.isCorrect
+    ? result.truthSummary
+        .split(/\n\s*\n/)
+        .filter((paragraph) => paragraph.trim())
+        .map(
+          (paragraph) => `<p class="truth-paragraph">${paragraph.trim()}</p>`,
+        )
+        .join("")
+    : "";
+
+  app.innerHTML = `
+    <main class="solution-result-page">
+      <section class="solution-result-card">
+        <p class="eyebrow">
+          ${result.isCorrect ? "CASE SOLVED" : "DEDUCTION FAILED"}
+        </p>
+
+        <h1>${resultTitle}</h1>
+        <p class="solution-result-message">${resultMessage}</p>
+
+        <div class="solution-score">
+          <p>현재 점수</p>
+          <strong>${result.score}점</strong>
+
+          ${result.isCorrect ? `<span>GRADE ${result.grade}</span>` : ""}
+        </div>
+
+        ${
+          result.isCorrect
+            ? `
+              <div class="truth-summary">
+                <p class="statement-label">사건의 진실</p>
+
+                <div class="truth-summary-content">
+                  ${truthParagraphs}
+                </div>
+              </div>
+            `
+            : ""
+        }
+
+        <button
+          id="solution-result-button"
+          class="primary-button"
+          type="button"
+        >
+          ${result.isCorrect ? "사건 선택으로" : "다시 추리하기"}
+        </button>
+      </section>
+    </main>
+  `;
+
+  document
+    .querySelector("#solution-result-button")
+    .addEventListener("click", () => {
+      moveToPage(result.isCorrect ? "case-select" : "solution");
+    });
 }
 
 function renderEvidenceNotePage(evidences) {

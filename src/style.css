@@ -1212,3 +1212,272 @@ h2 {
     bottom: 180px;
   }
 }
+
+.hint-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.hint-modal[hidden] {
+  display: none;
+}
+
+.hint-modal-content {
+  position: relative;
+  width: min(100%, 520px);
+  padding: 42px;
+  border: 1px solid rgba(196, 164, 113, 0.7);
+  background: #211d18;
+  box-shadow: 16px 16px 0 rgba(0, 0, 0, 0.25);
+}
+
+.hint-close-button {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  border: 0;
+  background: transparent;
+  color: #c4a471;
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.hint-order {
+  margin: 18px 0 24px;
+  color: #c4a471;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.hint-content {
+  margin: 0;
+  color: #f5eee2;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+.hint-score {
+  margin: 30px 0 0;
+  color: #bdb4a7;
+  font-size: 0.9rem;
+}
+
+.hint-modal-content {
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.hint-history-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.hint-history-card {
+  padding: 18px 20px;
+  border-left: 3px solid #c4a471;
+  background: rgba(53, 43, 33, 0.72);
+}
+
+.hint-history-card p {
+  margin: 0 0 10px;
+  color: #c4a471;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.hint-history-card span {
+  color: #f5eee2;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.hint-empty {
+  margin: 28px 0 0;
+  color: #bdb4a7;
+  line-height: 1.7;
+}
+
+.hint-use-button {
+  width: 100%;
+  margin-top: 24px;
+}
+
+/* 최종 답안 제출 화면 */
+.solution-page {
+  width: min(900px, calc(100% - 48px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 72px 0;
+}
+
+.solution-page .back-button {
+  display: inline-flex;
+  width: max-content;
+  margin: 0 0 56px;
+}
+
+.solution-content {
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+
+.solution-content h1 {
+  margin: 12px 0 18px;
+  font-size: clamp(3.5rem, 7vw, 5.5rem);
+}
+
+.solution-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.solution-field {
+  display: grid;
+  gap: 12px;
+}
+
+.solution-field span {
+  color: #c4a471;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.solution-field select,
+.solution-field textarea {
+  width: 100%;
+  border: 1px solid rgba(196, 164, 113, 0.5);
+  border-radius: 0;
+  background: rgba(29, 27, 24, 0.9);
+  color: #f5eee2;
+  font: inherit;
+}
+
+.solution-field select {
+  height: 56px;
+  padding: 0 16px;
+}
+
+.solution-field textarea {
+  min-height: 280px;
+  padding: 20px;
+  line-height: 1.8;
+  resize: vertical;
+}
+
+.solution-truth-field {
+  grid-column: auto;
+}
+
+.solution-submit-button {
+  justify-self: center;
+  min-width: 260px;
+  margin: 20px 0 0;
+}
+
+/* 최종 답안 결과 화면 */
+.solution-result-page {
+  width: min(960px, calc(100% - 48px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 72px 0;
+  display: grid;
+  place-items: center;
+}
+
+.solution-result-card {
+  width: min(100%, 720px);
+  padding: 56px;
+  border: 1px solid rgba(196, 164, 113, 0.55);
+  background: rgba(29, 27, 24, 0.92);
+  box-shadow: 16px 16px 0 rgba(0, 0, 0, 0.22);
+  text-align: center;
+}
+
+.solution-result-card h1 {
+  margin: 14px 0 20px;
+  font-size: clamp(3.2rem, 6vw, 5.2rem);
+}
+
+.solution-result-message {
+  margin: 0;
+  color: #bdb4a7;
+  font-size: 1.02rem;
+  line-height: 1.8;
+}
+
+.solution-score {
+  display: grid;
+  gap: 8px;
+  margin: 40px 0;
+}
+
+.solution-score p,
+.solution-score strong,
+.solution-score span {
+  margin: 0;
+}
+
+.solution-score p {
+  color: #bdb4a7;
+}
+
+.solution-score strong {
+  color: #c4a471;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 4rem;
+  font-weight: 400;
+}
+
+.solution-score span {
+  color: #f5eee2;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.solution-result-card .primary-button {
+  min-width: 240px;
+}
+
+.truth-summary {
+  margin: 38px 0;
+  padding: 30px 32px;
+  border-left: 3px solid #c4a471;
+  background: rgba(53, 43, 33, 0.72);
+  text-align: left;
+}
+
+.truth-summary .statement-label {
+  margin: 0 0 22px;
+}
+
+.truth-summary-content {
+  max-height: 360px;
+  padding-right: 14px;
+  overflow-y: auto;
+}
+
+.truth-paragraph {
+  margin: 0 0 20px;
+  color: #e7dfd3;
+  font-size: 0.98rem;
+  line-height: 1.9;
+  word-break: keep-all;
+}
+
+.truth-paragraph:last-child {
+  margin-bottom: 0;
+}

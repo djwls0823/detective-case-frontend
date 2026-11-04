@@ -132,3 +132,52 @@ export async function getEvidences(sessionId) {
   const result = await response.json();
   return result.resultData;
 }
+
+export async function useHint(sessionId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-sessions/${sessionId}/hints`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("힌트를 불러오지 못했습니다.");
+  }
+
+  const result = await response.json();
+  return result.resultData;
+}
+
+export async function getHintHistory(sessionId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-sessions/${sessionId}/hints`,
+  );
+
+  if (!response.ok) {
+    throw new Error("힌트 기록을 불러오지 못했습니다.");
+  }
+
+  const result = await response.json();
+  return result.resultData;
+}
+
+export async function submitSolution(sessionId, solution) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-sessions/${sessionId}/solution`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(solution),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("답안을 제출하지 못했습니다.");
+  }
+
+  const result = await response.json();
+  return result.resultData;
+}
