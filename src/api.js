@@ -76,3 +76,46 @@ export async function getScene(sessionId) {
 
   return result.resultData;
 }
+
+export async function getSuspects(sessionId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-sessions/${sessionId}/suspects`,
+  );
+
+  if (!response.ok) {
+    throw new Error("용의자 목록을 불러오지 못했습니다.");
+  }
+
+  const result = await response.json();
+
+  return result.resultData;
+}
+
+export async function getSuspectDetail(sessionId, suspectId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-sessions/${sessionId}/suspects/${suspectId}`,
+  );
+
+  if (!response.ok) {
+    throw new Error("용의자 정보를 불러오지 못했습니다.");
+  }
+
+  const result = await response.json();
+  return result.resultData;
+}
+
+export async function askQuestion(sessionId, questionId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-sessions/${sessionId}/questions/${questionId}`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("질문과 답변을 불러오지 못했습니다.");
+  }
+
+  const result = await response.json();
+  return result.resultData;
+}
