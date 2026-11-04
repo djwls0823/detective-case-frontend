@@ -8,6 +8,7 @@ import {
   getSuspects,
   getSuspectDetail,
   askQuestion,
+  getEvidences,
 } from "./api.js";
 
 const app = document.querySelector("#app");
@@ -15,20 +16,20 @@ const PAGE_STATE_KEY = "detectiveCasePageState";
 
 function getSavedPageState() {
   try {
-    const savedState = JSON.parse(localStorage.getItem(PAGE_STATE_KEY));
+    const savedState = JSON.parse(sessionStorage.getItem(PAGE_STATE_KEY));
 
     if (savedState?.page) {
       return savedState;
     }
   } catch {
-    localStorage.removeItem(PAGE_STATE_KEY);
+    sessionStorage.removeItem(PAGE_STATE_KEY);
   }
 
   return { page: "start" };
 }
 
 function savePageState(pageState) {
-  localStorage.setItem(PAGE_STATE_KEY, JSON.stringify(pageState));
+  sessionStorage.setItem(PAGE_STATE_KEY, JSON.stringify(pageState));
 }
 
 function resetToStartPage() {
@@ -107,6 +108,17 @@ async function renderPage(pageState) {
 
       const suspects = await getSuspects(sessionId);
       renderSuspectListPage(suspects);
+      return;
+    }
+
+    case "evidences": {
+      if (!sessionId) {
+        resetToStartPage();
+        return;
+      }
+
+      const evidences = await getEvidences(sessionId);
+      renderEvidenceNotePage(evidences);
       return;
     }
 
@@ -414,12 +426,17 @@ function renderScenePage(scene) {
     button.addEventListener("click", () => {
       const notice = document.querySelector("#scene-notice");
 
-      if (button.dataset.menu !== "suspect") {
-        notice.textContent = `${button.textContent.trim()} 기능은 다음 단계에서 연결합니다.`;
+      if (button.dataset.menu === "suspect") {
+        moveToPage("suspects");
         return;
       }
 
-      moveToPage("suspects");
+      if (button.dataset.menu === "evidence") {
+        moveToPage("evidences");
+        return;
+      }
+
+      notice.textContent = `${button.textContent.trim()} 기능은 다음 단계에서 연결합니다.`;
     });
   });
 }
@@ -495,23 +512,27 @@ function renderInterrogationPage(suspect) {
       <button type="button" class="back-button">← 용의자 목록</button>
 
       <section class="interrogation-layout">
-        <div class="interrogation-portrait interrogation-portrait-${suspect.suspectId}"></div>
+        <div
+          class="interrogation-portrait interrogation-portrait-${suspect.suspectId}"
+        ></div>
 
         <div class="interrogation-content">
           <p class="eyebrow">SUSPECT RECORD</p>
           <p class="suspect-role">${suspect.roleName}</p>
           <h1 class="interrogation-name">${suspect.name}</h1>
 
-          <div class="statement-paper">
+          <div class="interrogation-panel">
             <p class="statement-label">최초 진술</p>
             <p class="statement-text">${suspect.initialStatement}</p>
           </div>
         </div>
       </section>
 
-      <button type="button" class="primary-button interrogation-start-button">
-        심문 시작하기
-      </button>
+      <div class="interrogation-action-area">
+        <button type="button" class="primary-button interrogation-start-button">
+          심문 시작하기
+        </button>
+      </div>
     </main>
   `;
 
@@ -544,49 +565,51 @@ function renderQuestionPage(suspect, answer = null) {
     )
     .join("");
 
-  const statementTitle = answer
-    ? answer.isNewQuestion
-      ? "새로 확보한 진술"
-      : "진술 다시 확인"
-    : "심문을 시작합니다";
+  const panelContent = answer
+    ? `
+      <p class="statement-label">
+        ${answer.isNewQuestion ? "새로 확보한 진술" : "진술 다시 확인"}
+      </p>
 
-  const statementText = answer
-    ? answer.answerText
-    : "질문을 선택해 용의자의 진술을 확인하세요.";
+      <p class="answer-question">Q. ${answer.questionText}</p>
+      <p class="statement-text">${answer.answerText}</p>
+
+      <button
+        type="button"
+        class="secondary-button question-list-button"
+      >
+        질문 목록으로
+      </button>
+    `
+    : `
+      <p class="statement-label">질문 선택</p>
+
+      <div class="question-list">
+        ${questionButtons}
+      </div>
+    `;
 
   app.innerHTML = `
     <main class="interrogation-page question-page">
       <button type="button" class="back-button">← 용의자 상세</button>
 
       <section class="interrogation-layout">
-        <div class="interrogation-portrait interrogation-portrait-${suspect.suspectId}"></div>
+        <div
+          class="interrogation-portrait interrogation-portrait-${suspect.suspectId}"
+        ></div>
 
         <div class="interrogation-content">
           <p class="eyebrow">INTERROGATION IN PROGRESS</p>
           <p class="suspect-role">${suspect.roleName}</p>
           <h1 class="interrogation-name">${suspect.name}</h1>
 
-          <div class="statement-paper">
-            <p class="statement-label">${statementTitle}</p>
-            ${
-              answer
-                ? `<p class="answer-question">Q. ${answer.questionText}</p>`
-                : ""
-            }
-            <p class="statement-text">${statementText}</p>
+          <div class="interrogation-panel question-panel">
+            ${panelContent}
           </div>
-
-          <section class="question-section">
-            <p class="statement-label">질문 선택</p>
-
-            <div class="question-list">
-              ${questionButtons}
-            </div>
-          </section>
-
-          <p id="interrogation-notice" class="notice" aria-live="polite"></p>
         </div>
       </section>
+
+      <div class="interrogation-action-area" aria-hidden="true"></div>
     </main>
   `;
 
@@ -596,14 +619,19 @@ function renderQuestionPage(suspect, answer = null) {
     });
   });
 
+  document
+    .querySelector(".question-list-button")
+    ?.addEventListener("click", () => {
+      renderQuestionPage(suspect);
+    });
+
   document.querySelectorAll(".question-button").forEach((button) => {
     button.addEventListener("click", async () => {
-      const notice = document.querySelector("#interrogation-notice");
       const sessionId = localStorage.getItem("sessionId");
       const questionId = Number(button.dataset.questionId);
 
       button.disabled = true;
-      notice.textContent = "답변을 확인하고 있습니다...";
+      button.querySelector("small").textContent = "확인 중...";
 
       try {
         const answerResult = await askQuestion(sessionId, questionId);
@@ -624,11 +652,120 @@ function renderQuestionPage(suspect, answer = null) {
           answerResult,
         );
       } catch (error) {
-        notice.textContent = error.message;
+        alert(error.message);
         button.disabled = false;
+        button.querySelector("small").textContent = "질문하기";
       }
     });
   });
+}
+
+function renderEvidenceNotePage(evidences) {
+  if (evidences.length === 0) {
+    app.innerHTML = `
+      <main class="evidence-page">
+        <p class="notice">등록된 증거가 없습니다.</p>
+      </main>
+    `;
+    return;
+  }
+
+  let currentIndex = 0;
+
+  function renderCurrentEvidence() {
+    const evidence = evidences[currentIndex];
+    const isFirstEvidence = currentIndex === 0;
+    const isLastEvidence = currentIndex === evidences.length - 1;
+
+    app.innerHTML = `
+      <main class="evidence-page">
+        <header class="evidence-header">
+          <div>
+            <p class="eyebrow">EVIDENCE NOTE</p>
+            <h1>증거 노트</h1>
+            <p class="intro">
+              현장에서 발견된 물건과 기록입니다. 의미는 직접 판단하세요.
+            </p>
+          </div>
+
+          <button id="scene-back-button" class="secondary-button" type="button">
+            현장으로 돌아가기
+          </button>
+        </header>
+
+        <section class="evidence-viewer">
+          <button
+            class="evidence-nav-button"
+            id="previous-evidence-button"
+            type="button"
+            aria-label="이전 증거"
+            ${isFirstEvidence ? "disabled" : ""}
+          >
+            ←
+          </button>
+
+          <article class="evidence-single-card">
+            ${
+              evidence.imageUrl
+                ? `
+                  <img
+                    class="evidence-single-image"
+                    src="${evidence.imageUrl}"
+                    alt="${evidence.name}"
+                  />
+                `
+                : ""
+            }
+
+            <div class="evidence-single-content">
+              <p class="evidence-number">
+                EVIDENCE ${String(evidence.evidenceId).padStart(2, "0")}
+              </p>
+
+              <h2>${evidence.name}</h2>
+              <p>${evidence.description}</p>
+            </div>
+          </article>
+
+          <button
+            class="evidence-nav-button"
+            id="next-evidence-button"
+            type="button"
+            aria-label="다음 증거"
+            ${isLastEvidence ? "disabled" : ""}
+          >
+            →
+          </button>
+        </section>
+
+        <p class="evidence-progress">
+          ${currentIndex + 1} / ${evidences.length}
+        </p>
+      </main>
+    `;
+
+    document
+      .querySelector("#scene-back-button")
+      .addEventListener("click", () => {
+        moveToPage("scene");
+      });
+
+    document
+      .querySelector("#previous-evidence-button")
+      .addEventListener("click", () => {
+        currentIndex -= 1;
+        renderCurrentEvidence();
+      });
+
+    document
+      .querySelector("#next-evidence-button")
+      .addEventListener("click", () => {
+        currentIndex += 1;
+        renderCurrentEvidence();
+      });
+  }
+
+  renderCurrentEvidence();
 }
 
 window.addEventListener("popstate", async (event) => {
