@@ -229,15 +229,20 @@ function renderStartPage() {
   });
 
   continueButton.addEventListener("click", async () => {
+    const playerId = localStorage.getItem("playerId");
     const sessionId = localStorage.getItem("sessionId");
 
-    if (!sessionId) {
-      notice.textContent =
-        "이어서 할 게임이 없습니다. 새 사건을 시작해 주세요.";
+    if (sessionId) {
+      await moveToPage("scene");
       return;
     }
 
-    await moveToPage("scene");
+    if (playerId) {
+      await moveToPage("case-select");
+      return;
+    }
+
+    notice.textContent = "이어서 할 게임이 없습니다. 새 사건을 시작해 주세요.";
   });
 }
 
@@ -245,23 +250,32 @@ function renderCaseSelectPage(cases) {
   const caseCards = cases
     .map((caseItem) => {
       const caseNumber = String(caseItem.caseId).padStart(2, "0");
+      const isSolved = caseItem.isSolved;
+      const isSelectable = caseItem.isUnlocked && !isSolved;
+
+      const description = isSolved
+        ? "해결 완료"
+        : caseItem.isUnlocked
+          ? "사건을 시작할 수 있습니다."
+          : "이전 사건을 해결하면 해금됩니다.";
 
       return `
         <button
-          class="case-select-card"
+          class="case-select-card ${isSolved ? "solved" : ""}"
           type="button"
           data-case-id="${caseItem.caseId}"
-          ${caseItem.isUnlocked ? "" : "disabled"}
+          ${isSelectable ? "" : "disabled"}
         >
           <p class="card-label">CASE ${caseNumber}</p>
           <h2>${caseItem.title}</h2>
-          <p class="case-description">
-            ${
-              caseItem.isUnlocked
-                ? "사건을 시작할 수 있습니다."
-                : "이전 사건을 해결하면 해금됩니다."
-            }
-          </p>
+
+          <p class="case-description">${description}</p>
+
+          ${
+            isSolved
+              ? `<span class="case-select-status solved">해결 완료</span>`
+              : ""
+          }
         </button>
       `;
     })
@@ -323,6 +337,14 @@ function renderCaseSelectPage(cases) {
 function renderBriefingPage(briefing) {
   app.innerHTML = `
     <main class="briefing-page">
+      <button
+        id="briefing-start-button"
+        class="briefing-start-button"
+        type="button"
+      >
+        ← 처음 화면으로
+      </button>
+
       <section class="briefing-note">
         <p class="eyebrow">CONFIDENTIAL CASE BRIEFING</p>
 
@@ -374,6 +396,12 @@ function renderBriefingPage(briefing) {
     .addEventListener("click", () => {
       moveToPage("scene");
     });
+
+  document
+    .querySelector("#briefing-start-button")
+    .addEventListener("click", () => {
+      moveToPage("start");
+    });
 }
 
 function renderScenePage(scene) {
@@ -385,7 +413,17 @@ function renderScenePage(scene) {
           <h1 id="scene-title"></h1>
         </div>
 
-        <p class="scene-status">현장 조사 중</p>
+        <div class="scene-header-actions">
+          <button
+            id="briefing-button"
+            class="scene-briefing-button"
+            type="button"
+          >
+            사건 브리핑 다시 보기
+          </button>
+
+          <p class="scene-status">현장 조사 중</p>
+        </div>
       </header>
 
       <section class="scene-stage">
@@ -476,6 +514,10 @@ function renderScenePage(scene) {
     sceneImage.hidden = true;
     scenePlaceholder.hidden = false;
   }
+
+  document.querySelector("#briefing-button").addEventListener("click", () => {
+    moveToPage("briefing");
+  });
 
   async function loadHintHistory() {
     const hintHistory = await getHintHistory(sessionId);
@@ -904,6 +946,10 @@ function renderSolutionPage(suspects, evidences) {
 }
 
 function renderSolutionResultPage(result) {
+  if (result.isCorrect) {
+    localStorage.removeItem("sessionId");
+  }
+
   const resultTitle = result.isCorrect ? "사건 해결" : "사건 해결 실패";
 
   const resultMessage = result.isCorrect
