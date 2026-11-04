@@ -552,3 +552,291 @@ h2 {
     margin: 0;
   }
 }
+
+.suspect-list-page {
+  width: min(1080px, calc(100% - 48px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 72px 0;
+}
+
+.suspect-list-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 42px;
+}
+
+.suspect-list-header h1 {
+  margin: 12px 0 16px;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  letter-spacing: -0.06em;
+}
+
+.suspect-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.suspect-card {
+  min-height: 220px;
+  padding: 30px;
+  border: 1px solid rgba(196, 164, 113, 0.4);
+  background: rgba(27, 25, 22, 0.84);
+  color: #f5eee2;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.suspect-card:hover {
+  transform: translateY(-4px);
+  border-color: #c4a471;
+  background: rgba(52, 45, 36, 0.94);
+}
+
+.suspect-number {
+  margin: 0 0 38px;
+  color: #c4a471;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.suspect-card h2 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.suspect-role {
+  margin: 0;
+  color: #bdb4a7;
+}
+
+.suspect-status {
+  display: inline-block;
+  margin-top: 28px;
+  color: #c4a471;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.suspect-status.completed {
+  color: #89b98a;
+}
+
+@media (max-width: 700px) {
+  .suspect-list-page {
+    width: min(100% - 32px, 1080px);
+    padding: 44px 0;
+  }
+
+  .suspect-list-header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .suspect-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .suspect-list-header .secondary-button {
+    width: 100%;
+  }
+}
+
+.interrogation-page {
+  width: min(1120px, calc(100% - 48px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 56px 0;
+}
+
+.back-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #c4a471;
+  cursor: pointer;
+  font: inherit;
+}
+
+.interrogation-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(340px, 1.1fr);
+  align-items: start;
+  gap: 72px;
+  min-height: calc(100vh - 150px);
+}
+
+.interrogation-portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(196, 164, 113, 0.45);
+  background-image: url("/images/suspects.png");
+  background-repeat: no-repeat;
+  background-size: 200% 200%;
+  background-color: #211b19;
+}
+
+.interrogation-portrait-1 {
+  background-position: left top;
+}
+
+.interrogation-portrait-2 {
+  background-position: right top;
+}
+
+.interrogation-portrait-3 {
+  background-position: left bottom;
+}
+
+.interrogation-portrait-4 {
+  background-position: right bottom;
+}
+
+.interrogation-content {
+  max-width: 520px;
+}
+
+.interrogation-name {
+  margin: 8px 0 32px;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+}
+
+.statement-paper {
+  padding: 28px;
+  border-left: 3px solid #c4a471;
+  background: rgba(29, 27, 24, 0.82);
+}
+
+.statement-label {
+  margin: 0 0 16px;
+  color: #c4a471;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.statement-text {
+  margin: 0;
+  color: #e7dfd3;
+  line-height: 1.9;
+  white-space: pre-line;
+}
+
+.interrogation-start-button {
+  margin-top: 28px;
+}
+
+@media (max-width: 760px) {
+  .interrogation-page {
+    width: min(100% - 32px, 560px);
+    padding: 32px 0;
+  }
+
+  .interrogation-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 36px;
+    min-height: auto;
+    padding: 42px 0;
+  }
+
+  .interrogation-content {
+    max-width: none;
+  }
+}
+
+.question-section {
+  margin-top: 30px;
+}
+
+.question-list {
+  display: grid;
+  gap: 10px;
+}
+
+.question-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid #625b50;
+  background: rgba(29, 27, 24, 0.82);
+  color: #e7dfd3;
+  cursor: pointer;
+  text-align: left;
+}
+
+.question-button:hover {
+  border-color: #c4a471;
+}
+
+.question-button.asked {
+  border-color: rgba(196, 164, 113, 0.6);
+}
+
+.question-button small {
+  flex-shrink: 0;
+  color: #c4a471;
+}
+
+.answer-paper {
+  margin-top: 18px;
+  padding: 28px;
+  border-left: 3px solid #c4a471;
+  background: rgba(53, 43, 33, 0.88);
+}
+
+.answer-question {
+  margin: 0 0 14px;
+  color: #c4a471;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* 용의자 상세: 초상화와 최초 진술 박스의 아래선을 맞춘다. */
+@media (min-width: 761px) {
+  .interrogation-page:not(.question-page) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .interrogation-page:not(.question-page) .interrogation-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    min-height: 0;
+    margin-top: 32px;
+  }
+
+  .interrogation-page:not(.question-page) .interrogation-portrait {
+    align-self: start;
+  }
+
+  .interrogation-page:not(.question-page) .interrogation-content {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .interrogation-page:not(.question-page) .statement-paper {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .interrogation-page:not(.question-page) .interrogation-start-button {
+    align-self: center;
+    min-width: 240px;
+    margin-top: auto;
+    margin-bottom: 170px;
+  }
+}

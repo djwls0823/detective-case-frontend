@@ -5,9 +5,137 @@ import {
   createGameSession,
   getBriefing,
   getScene,
+  getSuspects,
+  getSuspectDetail,
+  askQuestion,
 } from "./api.js";
 
 const app = document.querySelector("#app");
+const PAGE_STATE_KEY = "detectiveCasePageState";
+
+function getSavedPageState() {
+  try {
+    const savedState = JSON.parse(localStorage.getItem(PAGE_STATE_KEY));
+
+    if (savedState?.page) {
+      return savedState;
+    }
+  } catch {
+    localStorage.removeItem(PAGE_STATE_KEY);
+  }
+
+  return { page: "start" };
+}
+
+function savePageState(pageState) {
+  localStorage.setItem(PAGE_STATE_KEY, JSON.stringify(pageState));
+}
+
+function resetToStartPage() {
+  const startState = { page: "start" };
+
+  savePageState(startState);
+  history.replaceState(startState, "", window.location.href);
+  renderStartPage();
+}
+
+async function moveToPage(page, data = {}, replace = false) {
+  const pageState = { page, ...data };
+
+  savePageState(pageState);
+
+  if (replace) {
+    history.replaceState(pageState, "", window.location.href);
+  } else {
+    history.pushState(pageState, "", window.location.href);
+  }
+
+  try {
+    await renderPage(pageState);
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function renderPage(pageState) {
+  const playerId = localStorage.getItem("playerId");
+  const sessionId = localStorage.getItem("sessionId");
+
+  switch (pageState.page) {
+    case "start":
+      renderStartPage();
+      return;
+
+    case "case-select": {
+      if (!playerId) {
+        resetToStartPage();
+        return;
+      }
+
+      const cases = await getCases(playerId);
+      renderCaseSelectPage(cases);
+      return;
+    }
+
+    case "briefing": {
+      if (!sessionId) {
+        resetToStartPage();
+        return;
+      }
+
+      const briefing = await getBriefing(sessionId);
+      renderBriefingPage(briefing);
+      return;
+    }
+
+    case "scene": {
+      if (!sessionId) {
+        resetToStartPage();
+        return;
+      }
+
+      const scene = await getScene(sessionId);
+      renderScenePage(scene);
+      return;
+    }
+
+    case "suspects": {
+      if (!sessionId) {
+        resetToStartPage();
+        return;
+      }
+
+      const suspects = await getSuspects(sessionId);
+      renderSuspectListPage(suspects);
+      return;
+    }
+
+    case "interrogation": {
+      if (!sessionId || !pageState.suspectId) {
+        resetToStartPage();
+        return;
+      }
+
+      const suspect = await getSuspectDetail(sessionId, pageState.suspectId);
+      renderInterrogationPage(suspect);
+      return;
+    }
+
+    case "questions": {
+      if (!sessionId || !pageState.suspectId) {
+        resetToStartPage();
+        return;
+      }
+
+      const suspect = await getSuspectDetail(sessionId, pageState.suspectId);
+      renderQuestionPage(suspect);
+      return;
+    }
+
+    default:
+      resetToStartPage();
+  }
+}
 
 function renderStartPage() {
   app.innerHTML = `
@@ -58,21 +186,28 @@ function renderStartPage() {
     notice.textContent = "새 사건을 준비하고 있습니다...";
 
     try {
-      const playerId = await createPlayer();
+      localStorage.removeItem("sessionId");
 
+      const playerId = await createPlayer();
       localStorage.setItem("playerId", playerId);
 
-      const cases = await getCases(playerId);
-
-      renderCaseSelectPage(cases);
+      await moveToPage("case-select");
     } catch (error) {
       notice.textContent = error.message;
       startButton.disabled = false;
     }
   });
 
-  continueButton.addEventListener("click", () => {
-    notice.textContent = "이어서 하기 기능은 게임 세션 구현 후 연결합니다.";
+  continueButton.addEventListener("click", async () => {
+    const sessionId = localStorage.getItem("sessionId");
+
+    if (!sessionId) {
+      notice.textContent =
+        "이어서 할 게임이 없습니다. 새 사건을 시작해 주세요.";
+      return;
+    }
+
+    await moveToPage("scene");
   });
 }
 
@@ -91,7 +226,11 @@ function renderCaseSelectPage(cases) {
           <p class="card-label">CASE ${caseNumber}</p>
           <h2>${caseItem.title}</h2>
           <p class="case-description">
-            ${caseItem.isUnlocked ? "사건을 시작할 수 있습니다." : "이전 사건을 해결하면 해금됩니다."}
+            ${
+              caseItem.isUnlocked
+                ? "사건을 시작할 수 있습니다."
+                : "이전 사건을 해결하면 해금됩니다."
+            }
           </p>
         </button>
       `;
@@ -119,7 +258,7 @@ function renderCaseSelectPage(cases) {
   `;
 
   document.querySelector("#back-button").addEventListener("click", () => {
-    renderStartPage();
+    moveToPage("start");
   });
 
   document.querySelectorAll(".case-select-card").forEach((caseCard) => {
@@ -142,9 +281,7 @@ function renderCaseSelectPage(cases) {
 
         localStorage.setItem("sessionId", sessionId);
 
-        const briefing = await getBriefing(sessionId);
-
-        renderBriefingPage(briefing);
+        await moveToPage("briefing");
       } catch (error) {
         caseNotice.textContent = error.message;
         caseCard.disabled = false;
@@ -190,8 +327,6 @@ function renderBriefingPage(briefing) {
         <button id="briefing-next-button" class="primary-button" type="button">
           사건 현장으로
         </button>
-
-        <p id="briefing-notice" class="notice" aria-live="polite"></p>
       </section>
     </main>
   `;
@@ -206,24 +341,8 @@ function renderBriefingPage(briefing) {
 
   document
     .querySelector("#briefing-next-button")
-    .addEventListener("click", async () => {
-      const notice = document.querySelector("#briefing-notice");
-      const sessionId = localStorage.getItem("sessionId");
-
-      if (!sessionId) {
-        notice.textContent = "게임 세션 정보가 없습니다.";
-        return;
-      }
-
-      notice.textContent = "사건 현장으로 이동하고 있습니다...";
-
-      try {
-        const scene = await getScene(sessionId);
-
-        renderScenePage(scene);
-      } catch (error) {
-        notice.textContent = error.message;
-      }
+    .addEventListener("click", () => {
+      moveToPage("scene");
     });
 }
 
@@ -295,9 +414,244 @@ function renderScenePage(scene) {
     button.addEventListener("click", () => {
       const notice = document.querySelector("#scene-notice");
 
-      notice.textContent = `${button.textContent.trim()} 기능은 다음 단계에서 연결합니다.`;
+      if (button.dataset.menu !== "suspect") {
+        notice.textContent = `${button.textContent.trim()} 기능은 다음 단계에서 연결합니다.`;
+        return;
+      }
+
+      moveToPage("suspects");
     });
   });
 }
 
-renderStartPage();
+function renderSuspectListPage(suspects) {
+  const suspectCards = suspects
+    .map((suspect) => {
+      const statusText = suspect.isInterrogationCompleted
+        ? "심문 완료"
+        : "심문 진행";
+
+      return `
+        <button
+          class="suspect-card"
+          type="button"
+          data-suspect-id="${suspect.suspectId}"
+        >
+          <p class="suspect-number">
+            SUSPECT ${String(suspect.suspectId).padStart(2, "0")}
+          </p>
+
+          <h2>${suspect.name}</h2>
+          <p class="suspect-role">${suspect.roleName}</p>
+
+          <span class="suspect-status ${
+            suspect.isInterrogationCompleted ? "completed" : ""
+          }">
+            ${statusText}
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+
+  app.innerHTML = `
+    <main class="suspect-list-page">
+      <header class="suspect-list-header">
+        <div>
+          <p class="eyebrow">SUSPECT RECORD</p>
+          <h1>용의자 진술</h1>
+          <p class="intro">
+            용의자를 선택해 기본 진술과 질문을 확인하세요.
+          </p>
+        </div>
+
+        <button id="scene-back-button" class="secondary-button" type="button">
+          현장으로 돌아가기
+        </button>
+      </header>
+
+      <section class="suspect-grid">
+        ${suspectCards}
+      </section>
+    </main>
+  `;
+
+  document.querySelector("#scene-back-button").addEventListener("click", () => {
+    moveToPage("scene");
+  });
+
+  document.querySelectorAll(".suspect-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      moveToPage("interrogation", {
+        suspectId: Number(card.dataset.suspectId),
+      });
+    });
+  });
+}
+
+function renderInterrogationPage(suspect) {
+  app.innerHTML = `
+    <main class="interrogation-page">
+      <button type="button" class="back-button">← 용의자 목록</button>
+
+      <section class="interrogation-layout">
+        <div class="interrogation-portrait interrogation-portrait-${suspect.suspectId}"></div>
+
+        <div class="interrogation-content">
+          <p class="eyebrow">SUSPECT RECORD</p>
+          <p class="suspect-role">${suspect.roleName}</p>
+          <h1 class="interrogation-name">${suspect.name}</h1>
+
+          <div class="statement-paper">
+            <p class="statement-label">최초 진술</p>
+            <p class="statement-text">${suspect.initialStatement}</p>
+          </div>
+        </div>
+      </section>
+
+      <button type="button" class="primary-button interrogation-start-button">
+        심문 시작하기
+      </button>
+    </main>
+  `;
+
+  document.querySelector(".back-button").addEventListener("click", () => {
+    moveToPage("suspects");
+  });
+
+  document
+    .querySelector(".interrogation-start-button")
+    .addEventListener("click", () => {
+      moveToPage("questions", {
+        suspectId: suspect.suspectId,
+      });
+    });
+}
+
+function renderQuestionPage(suspect, answer = null) {
+  const questionButtons = suspect.questions
+    .map(
+      (question) => `
+        <button
+          type="button"
+          class="question-button ${question.isAsked ? "asked" : ""}"
+          data-question-id="${question.questionId}"
+        >
+          <span>${question.questionText}</span>
+          <small>${question.isAsked ? "다시 확인하기" : "질문하기"}</small>
+        </button>
+      `,
+    )
+    .join("");
+
+  const statementTitle = answer
+    ? answer.isNewQuestion
+      ? "새로 확보한 진술"
+      : "진술 다시 확인"
+    : "심문을 시작합니다";
+
+  const statementText = answer
+    ? answer.answerText
+    : "질문을 선택해 용의자의 진술을 확인하세요.";
+
+  app.innerHTML = `
+    <main class="interrogation-page question-page">
+      <button type="button" class="back-button">← 용의자 상세</button>
+
+      <section class="interrogation-layout">
+        <div class="interrogation-portrait interrogation-portrait-${suspect.suspectId}"></div>
+
+        <div class="interrogation-content">
+          <p class="eyebrow">INTERROGATION IN PROGRESS</p>
+          <p class="suspect-role">${suspect.roleName}</p>
+          <h1 class="interrogation-name">${suspect.name}</h1>
+
+          <div class="statement-paper">
+            <p class="statement-label">${statementTitle}</p>
+            ${
+              answer
+                ? `<p class="answer-question">Q. ${answer.questionText}</p>`
+                : ""
+            }
+            <p class="statement-text">${statementText}</p>
+          </div>
+
+          <section class="question-section">
+            <p class="statement-label">질문 선택</p>
+
+            <div class="question-list">
+              ${questionButtons}
+            </div>
+          </section>
+
+          <p id="interrogation-notice" class="notice" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+  `;
+
+  document.querySelector(".back-button").addEventListener("click", () => {
+    moveToPage("interrogation", {
+      suspectId: suspect.suspectId,
+    });
+  });
+
+  document.querySelectorAll(".question-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const notice = document.querySelector("#interrogation-notice");
+      const sessionId = localStorage.getItem("sessionId");
+      const questionId = Number(button.dataset.questionId);
+
+      button.disabled = true;
+      notice.textContent = "답변을 확인하고 있습니다...";
+
+      try {
+        const answerResult = await askQuestion(sessionId, questionId);
+
+        const updatedQuestions = suspect.questions.map((question) => ({
+          ...question,
+          isAsked:
+            question.questionId === answerResult.questionId
+              ? true
+              : question.isAsked,
+        }));
+
+        renderQuestionPage(
+          {
+            ...suspect,
+            questions: updatedQuestions,
+          },
+          answerResult,
+        );
+      } catch (error) {
+        notice.textContent = error.message;
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+window.addEventListener("popstate", async (event) => {
+  const pageState = event.state?.page ? event.state : getSavedPageState();
+
+  try {
+    await renderPage(pageState);
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+async function initializeApp() {
+  const pageState = history.state?.page ? history.state : getSavedPageState();
+
+  savePageState(pageState);
+  history.replaceState(pageState, "", window.location.href);
+
+  try {
+    await renderPage(pageState);
+  } catch {
+    resetToStartPage();
+  }
+}
+
+initializeApp();
