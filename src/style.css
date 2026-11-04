@@ -658,6 +658,10 @@ h2 {
 }
 
 .back-button {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  margin-bottom: 32px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -807,15 +811,17 @@ h2 {
 /* 용의자 상세: 초상화와 최초 진술 박스의 아래선을 맞춘다. */
 @media (min-width: 761px) {
   .interrogation-page:not(.question-page) {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
   }
 
   .interrogation-page:not(.question-page) .interrogation-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
+    align-self: center;
     min-height: 0;
-    margin-top: 32px;
+    margin: 0;
+    gap: 88px;
   }
 
   .interrogation-page:not(.question-page) .interrogation-portrait {
@@ -835,8 +841,374 @@ h2 {
 
   .interrogation-page:not(.question-page) .interrogation-start-button {
     align-self: center;
+    justify-self: center;
     min-width: 240px;
-    margin-top: auto;
+    margin-top: 32px;
     margin-bottom: 170px;
+  }
+
+  .question-page .interrogation-layout {
+    gap: 88px;
+  }
+}
+
+.evidence-page {
+  width: min(1120px, calc(100% - 48px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 56px 0;
+}
+
+.evidence-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.evidence-header h1 {
+  margin: 12px 0;
+}
+
+.evidence-number {
+  margin: 0 0 10px;
+  color: #c4a471;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.evidence-viewer {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 880px) 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 64px;
+}
+
+.evidence-single-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 500px;
+  overflow: hidden;
+  border: 1px solid rgba(196, 164, 113, 0.45);
+  background: rgba(29, 27, 24, 0.86);
+}
+
+.evidence-single-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #171411;
+  border-right: 1px solid rgba(196, 164, 113, 0.35);
+}
+
+.evidence-single-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+}
+
+.evidence-single-content h2 {
+  margin: 10px 0 20px;
+  font-size: 2rem;
+}
+
+.evidence-single-content > p:last-child {
+  margin: 0;
+  color: #beb6a8;
+  font-size: 1.02rem;
+  line-height: 1.9;
+}
+
+.evidence-nav-button {
+  width: 64px;
+  height: 64px;
+  border: 1px solid rgba(196, 164, 113, 0.6);
+  background: rgba(29, 27, 24, 0.76);
+  color: #c4a471;
+  cursor: pointer;
+  font-size: 2rem;
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
+}
+
+.evidence-nav-button:hover:not(:disabled) {
+  background: #c4a471;
+  color: #1c1812;
+  transform: translateY(-2px);
+}
+
+.evidence-nav-button:disabled {
+  border-color: #484238;
+  color: #625b50;
+  cursor: default;
+}
+
+.evidence-progress {
+  margin: 28px 0 0;
+  color: #c4a471;
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 760px) {
+  .evidence-page {
+    width: min(100% - 32px, 560px);
+    padding: 32px 0;
+  }
+
+  .evidence-header {
+    display: block;
+  }
+
+  .evidence-header .secondary-button {
+    margin-top: 24px;
+  }
+
+  .evidence-viewer {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    gap: 10px;
+    margin-top: 36px;
+  }
+
+  .evidence-single-card {
+    display: block;
+    height: auto;
+    min-height: 360px;
+  }
+
+  .evidence-single-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border-right: 0;
+    border-bottom: 1px solid rgba(196, 164, 113, 0.35);
+  }
+
+  .evidence-single-content {
+    padding: 24px;
+  }
+
+  .evidence-single-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .evidence-nav-button {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+}
+
+.interrogation-panel {
+  height: 260px;
+  padding: 28px;
+  overflow: hidden;
+  border-left: 3px solid #c4a471;
+  background: rgba(29, 27, 24, 0.82);
+}
+
+.question-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.question-list {
+  display: grid;
+  gap: 8px;
+}
+
+.question-button {
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+.question-list-button {
+  width: 100%;
+  margin-top: auto;
+  padding: 11px 16px;
+}
+
+.interrogation-action-area {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+@media (min-width: 761px) {
+  .interrogation-page {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) 170px;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    margin-bottom: 0;
+  }
+
+  .interrogation-layout,
+  .interrogation-page:not(.question-page) .interrogation-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    align-self: stretch;
+    gap: 88px;
+    min-height: 0;
+    height: 100%;
+    margin: 0;
+  }
+
+  .interrogation-portrait,
+  .interrogation-page:not(.question-page) .interrogation-portrait {
+    width: auto;
+    height: min(100%, 500px);
+    aspect-ratio: 1 / 1;
+    justify-self: start;
+    align-self: center;
+  }
+
+  .interrogation-content,
+  .interrogation-page:not(.question-page) .interrogation-content {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    align-self: center;
+  }
+
+  .interrogation-name {
+    margin: 8px 0 24px;
+  }
+
+  .interrogation-start-button,
+  .interrogation-page:not(.question-page) .interrogation-start-button {
+    min-width: 240px;
+    margin: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .interrogation-page {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .interrogation-panel {
+    height: auto;
+    min-height: 260px;
+  }
+}
+
+@media (min-width: 761px) {
+  /* 최초 진술 / 심문 화면의 전체 기준점을 동일하게 고정 */
+  .interrogation-page,
+  .interrogation-page:not(.question-page) {
+    position: relative;
+    display: block;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+    padding: 56px 0;
+  }
+
+  /* 두 화면의 뒤로가기 버튼 위치를 동일하게 유지 */
+  .interrogation-page .back-button {
+    display: block;
+    width: max-content;
+    margin: 0;
+  }
+
+  /* 두 화면의 초상화·이름·내용 영역을 완전히 같은 위치에 배치 */
+  .interrogation-page:not(.question-page) .interrogation-layout,
+  .interrogation-page.question-page .interrogation-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 88px;
+    height: 500px;
+    min-height: 0;
+    margin-top: 72px;
+  }
+
+  /* 초상화 위치와 크기를 두 화면에서 통일 */
+  .interrogation-page:not(.question-page) .interrogation-portrait,
+  .interrogation-page.question-page .interrogation-portrait {
+    width: min(100%, 500px);
+    height: auto;
+    aspect-ratio: 1 / 1;
+    justify-self: start;
+    align-self: start;
+  }
+
+  /* 역할·이름·내용 박스의 시작 위치를 두 화면에서 통일 */
+  .interrogation-page:not(.question-page) .interrogation-content,
+  .interrogation-page.question-page .interrogation-content {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    align-self: start;
+  }
+
+  .interrogation-page .interrogation-name {
+    margin: 8px 0 24px;
+  }
+
+  /* 최초 진술과 질문·답변이 표시되는 공통 패널 */
+  .interrogation-page .interrogation-panel {
+    height: 340px;
+    padding: 28px;
+    overflow: hidden;
+  }
+
+  /* 최초 진술 화면의 버튼은 하단 중앙에 고정 */
+  .interrogation-page .interrogation-action-area {
+    position: absolute;
+    right: 0;
+    bottom: 36px;
+    left: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .interrogation-page:not(.question-page) .interrogation-start-button {
+    min-width: 240px;
+    margin: 0;
+  }
+}
+
+/* 질문 문장을 한 줄로 유지해 세 박스 높이를 통일 */
+.question-button {
+  height: 50px;
+  min-height: 50px;
+}
+
+.question-button span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  letter-spacing: -0.04em;
+}
+
+.question-button small {
+  white-space: nowrap;
+}
+
+/* 최초 진술 화면의 심문 시작 버튼을 더 위로 이동 */
+@media (min-width: 761px) {
+  .interrogation-page .interrogation-action-area {
+    bottom: 180px;
   }
 }

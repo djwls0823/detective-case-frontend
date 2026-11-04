@@ -119,3 +119,16 @@ export async function askQuestion(sessionId, questionId) {
   const result = await response.json();
   return result.resultData;
 }
+
+export async function getEvidences(sessionId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/game-sessions/${sessionId}/evidences`,
+  );
+
+  if (!response.ok) {
+    throw new Error("증거 목록을 불러오지 못했습니다.");
+  }
+
+  const result = await response.json();
+  return result.resultData;
+}
